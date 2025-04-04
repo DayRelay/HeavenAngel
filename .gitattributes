@@ -1,2 +1,2299 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+public class GitHubConnection {
+    public static JSONArray leerArchivoGitHub(String urlArchivo) {
+        try {
+            URL url = new URL(urlArchivo);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            // Leer respuesta
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            // Convertir respuesta a JSONArray
+            return new JSONArray(response.toString());
+        } catch (Exception e) {
+            System.err.println("Error al leer archivo de GitHub: " + e.getMessage());
+            return null;
+        }
+    }
+}
+
+public class Cliente {
+    private int id;
+    private String nombre;
+    private String apellido;
+    private String correo;
+    private String telefono;
+    private int generoId;
+
+    public Cliente(int id, String nombre, String apellido, String correo, String telefono, int generoId) {
+        this.id = id;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.correo = correo;
+        this.telefono = telefono;
+        this.generoId = generoId;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public int getGeneroId() { return generoId; }
+    public void setGeneroId(int generoId) { this.generoId = generoId; }
+}
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ClienteCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/clientes.json";
+
+    public static List<Cliente> leerClientes() {
+        List<Cliente> clientes = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Cliente cliente = new Cliente(
+                    obj.getInt("id"),
+                    obj.getString("nombre"),
+                    obj.getString("apellido"),
+                    obj.getString("correo"),
+                    obj.getString("telefono"),
+                    obj.getInt("generoId")
+                );
+                clientes.add(cliente);
+            }
+        }
+        return clientes;
+    }
+}
+
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class ClienteCRUD {
+    private static final String GITHUB_API_URL = "https://api.github.com/repos/usuario/repositorio/contents/clientes.json";
+    private static final String TOKEN = "TU_TOKEN_DE_GITHUB";
+
+    public static void agregarCliente(Cliente nuevoCliente) {
+        try {
+            // Leer los datos actuales
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_API_URL);
+
+            // Agregar nuevo cliente al JSON
+            if (data != null) {
+                JSONObject cliente = new JSONObject();
+                cliente.put("id", nuevoCliente.getId());
+                cliente.put("nombre", nuevoCliente.getNombre());
+                cliente.put("apellido", nuevoCliente.getApellido());
+                cliente.put("correo", nuevoCliente.getCorreo());
+                cliente.put("telefono", nuevoCliente.getTelefono());
+                cliente.put("generoId", nuevoCliente.getGeneroId());
+                data.put(cliente);
+
+                // Preparar contenido para la API
+                String contenidoCodificado = Base64.getEncoder().encodeToString(data.toString().getBytes());
+                String jsonPayload = "{ \"message\": \"Agregar cliente\", \"content\": \"" + contenidoCodificado + "\" }";
+
+                // Hacer solicitud PUT a la API
+                URL url = new URL(GITHUB_API_URL);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("PUT");
+                conn.setRequestProperty("Authorization", "token " + TOKEN);
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                OutputStream os = conn.getOutputStream();
+                os.write(jsonPayload.getBytes());
+                os.flush();
+                os.close();
+
+                System.out.println("Cliente agregado exitosamente.");
+
+            } else {
+                System.err.println("No se pudo leer los datos actuales de GitHub.");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error al agregar cliente: " + e.getMessage());
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        // Leer Clientes desde GitHub
+        System.out.println("Clientes en GitHub:");
+        ClienteCRUD.leerClientes().forEach(cliente -> {
+            System.out.println("ID: " + cliente.getId() + ", Nombre: " + cliente.getNombre());
+        });
+
+        // Agregar un nuevo cliente a GitHub
+        Cliente nuevoCliente = new Cliente(3, "Charles", "Leclerc", "charles@email.com", "555-9101", 1);
+        ClienteCRUD.agregarCliente(nuevoCliente);
+    }
+}
+
+package models;
+
+public class Empleado {
+    private int id;
+    private String nombre;
+    private String apellido;
+    private String telefono;
+    private String correo;
+    private int sueldo;
+    private int puestoId;
+    private int generoId;
+    private int edad;
+    private String contraseña;
+
+    public Empleado(int id, String nombre, String apellido, String telefono, String correo, int sueldo, int puestoId, int generoId, int edad, String contraseña) {
+        this.id = id;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.telefono = telefono;
+        this.correo = correo;
+        this.sueldo = sueldo;
+        this.puestoId = puestoId;
+        this.generoId = generoId;
+        this.edad = edad;
+        this.contraseña = contraseña;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
+    public int getSueldo() { return sueldo; }
+    public void setSueldo(int sueldo) { this.sueldo = sueldo; }
+    public int getPuestoId() { return puestoId; }
+    public void setPuestoId(int puestoId) { this.puestoId = puestoId; }
+    public int getGeneroId() { return generoId; }
+    public void setGeneroId(int generoId) { this.generoId = generoId; }
+    public int getEdad() { return edad; }
+    public void setEdad(int edad) { this.edad = edad; }
+    public String getContraseña() { return contraseña; }
+    public void setContraseña(String contraseña) { this.contraseña = contraseña; }
+}
+
+package crud;
+
+import database.DBConnection;
+import models.Empleado;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+public class EmpleadoCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/empleados.json";
+
+    public static List<Empleado> leerEmpleados() {
+        List<Empleado> empleados = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Empleado empleado = new Empleado(
+                    obj.getInt("id"),
+                    obj.getString("nombre"),
+                    obj.getString("apellido"),
+                    obj.getString("telefono"),
+                    obj.getString("correo"),
+                    obj.getInt("sueldo"),
+                    obj.getInt("puestoId"),
+                    obj.getInt("generoId"),
+                    obj.getInt("edad"),
+                    obj.getString("contraseña")
+                );
+                empleados.add(empleado);
+            }
+        }
+        return empleados;
+    }
+
+    public static void insertarEmpleado(Empleado nuevoEmpleado) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject empleado = new JSONObject();
+                empleado.put("id", nuevoEmpleado.getId());
+                empleado.put("nombre", nuevoEmpleado.getNombre());
+                empleado.put("apellido", nuevoEmpleado.getApellido());
+                empleado.put("telefono", nuevoEmpleado.getTelefono());
+                empleado.put("correo", nuevoEmpleado.getCorreo());
+                empleado.put("sueldo", nuevoEmpleado.getSueldo());
+                empleado.put("puestoId", nuevoEmpleado.getPuestoId());
+                empleado.put("generoId", nuevoEmpleado.getGeneroId());
+                empleado.put("edad", nuevoEmpleado.getEdad());
+                empleado.put("contraseña", nuevoEmpleado.getContraseña());
+                data.put(empleado);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir empleado");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar empleado: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class Servicio {
+    private int id;
+    private String nombre;
+    private String duracion;
+    private double precio;
+
+    public Servicio(int id, String nombre, String duracion, double precio) {
+        this.id = id;
+        this.nombre = nombre;
+        this.duracion = duracion;
+        this.precio = precio;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getDuracion() { return duracion; }
+    public void setDuracion(String duracion) { this.duracion = duracion; }
+    public double getPrecio() { return precio; }
+    public void setPrecio(double precio) { this.precio = precio; }
+}
+
+package crud;
+
+import database.DBConnection;
+import models.Servicio;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class ServicioCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/servicios.json";
+
+    public static void insertarServicio(Servicio servicio) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", servicio.getId());
+                obj.put("nombre", servicio.getNombre());
+                obj.put("duracion", servicio.getDuracion());
+                obj.put("precio", servicio.getPrecio());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir servicio");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar servicio: " + e.getMessage());
+        }
+    }
+}
+
+import crud.ClienteCRUD;
+import crud.EmpleadoCRUD;
+import crud.ServicioCRUD;
+import models.Cliente;
+import models.Empleado;
+import models.Servicio;
+
+public class Main {
+    public static void main(String[] args) {
+        // Operaciones para clientes
+        Cliente cliente1 = new Cliente(1, "Max", "Verstappen", "max@email.com", "555-1234", 1);
+        ClienteCRUD.insertarCliente(cliente1);
+
+        // Operaciones para empleados
+        Empleado empleado1 = new Empleado(1, "Lando", "Norris", "555-1122", "lando@email.com", 3000, 1, 1, 24, "password");
+        EmpleadoCRUD.insertarEmpleado(empleado1);
+
+        // Operaciones para servicios
+        Servicio servicio1 = new Servicio(1, "Masaje Relajante", "01:30:00", 500.00);
+        ServicioCRUD.insertarServicio(servicio1);
+
+        // Leer datos
+        System.out.println("Clientes:");
+        ClienteCRUD.leerClientes().forEach(cliente -> System.out.println(cliente.getNombre()));
+    }
+}
+
+package models;
+
+public class Reservacion {
+    private int id;
+    private String descripcion;
+    private int tematicaId;
+    private int clienteId;
+    private int empleadoId;
+
+    public Reservacion(int id, String descripcion, int tematicaId, int clienteId, int empleadoId) {
+        this.id = id;
+        this.descripcion = descripcion;
+        this.tematicaId = tematicaId;
+        this.clienteId = clienteId;
+        this.empleadoId = empleadoId;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public int getTematicaId() { return tematicaId; }
+    public void setTematicaId(int tematicaId) { this.tematicaId = tematicaId; }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
+    public int getEmpleadoId() { return empleadoId; }
+    public void setEmpleadoId(int empleadoId) { this.empleadoId = empleadoId; }
+}
+
+package crud;
+
+import models.Reservacion;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class ReservacionCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/reservaciones.json";
+
+    public static void insertarReservacion(Reservacion reservacion) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", reservacion.getId());
+                obj.put("descripcion", reservacion.getDescripcion());
+                obj.put("tematicaId", reservacion.getTematicaId());
+                obj.put("clienteId", reservacion.getClienteId());
+                obj.put("empleadoId", reservacion.getEmpleadoId());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir reservacion");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar reservacion: " + e.getMessage());
+        }
+    }
+
+    public static JSONArray leerReservaciones() {
+        return GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+    }
+}
+
+package models;
+
+public class Factura {
+    private int id;
+    private int reservacionId;
+    private double montoTotal;
+    private String fechaEmision;
+
+    public Factura(int id, int reservacionId, double montoTotal, String fechaEmision) {
+        this.id = id;
+        this.reservacionId = reservacionId;
+        this.montoTotal = montoTotal;
+        this.fechaEmision = fechaEmision;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getReservacionId() { return reservacionId; }
+    public void setReservacionId(int reservacionId) { this.reservacionId = reservacionId; }
+    public double getMontoTotal() { return montoTotal; }
+    public void setMontoTotal(double montoTotal) { this.montoTotal = montoTotal; }
+    public String getFechaEmision() { return fechaEmision; }
+    public void setFechaEmision(String fechaEmision) { this.fechaEmision = fechaEmision; }
+}
+
+package crud;
+
+import models.Factura;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class FacturaCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/facturas.json";
+
+    public static void insertarFactura(Factura factura) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", factura.getId());
+                obj.put("reservacionId", factura.getReservacionId());
+                obj.put("montoTotal", factura.getMontoTotal());
+                obj.put("fechaEmision", factura.getFechaEmision());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir factura");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar factura: " + e.getMessage());
+        }
+    }
+
+    public static JSONArray leerFacturas() {
+        return GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+    }
+}
+
+package models;
+
+public class Promocion {
+    private int id;
+    private String descripcion;
+    private double descuento;
+    private String fechaInicio;
+    private String fechaFin;
+
+    public Promocion(int id, String descripcion, double descuento, String fechaInicio, String fechaFin) {
+        this.id = id;
+        this.descripcion = descripcion;
+        this.descuento = descuento;
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public double getDescuento() { return descuento; }
+    public void setDescuento(double descuento) { this.descuento = descuento; }
+    public String getFechaInicio() { return fechaInicio; }
+    public void setFechaInicio(String fechaInicio) { this.fechaInicio = fechaInicio; }
+    public String getFechaFin() { return fechaFin; }
+    public void setFechaFin(String fechaFin) { this.fechaFin = fechaFin; }
+}
+
+package crud;
+
+import models.Promocion;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class PromocionCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/promociones.json";
+
+    public static void insertarPromocion(Promocion promocion) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", promocion.getId());
+                obj.put("descripcion", promocion.getDescripcion());
+                obj.put("descuento", promocion.getDescuento());
+                obj.put("fechaInicio", promocion.getFechaInicio());
+                obj.put("fechaFin", promocion.getFechaFin());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir promocion");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar promocion: " + e.getMessage());
+        }
+    }
+
+    public static JSONArray leerPromociones() {
+        return GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+    }
+}
+
+package models;
+
+public class Genero {
+    private int id;
+    private String genero;
+
+    public Genero(int id, String genero) {
+        this.id = id;
+        this.genero = genero;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getGenero() { return genero; }
+    public void setGenero(String genero) { this.genero = genero; }
+}
+
+package crud;
+
+import models.Genero;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class GeneroCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/generos.json";
+
+    public static List<Genero> leerGeneros() {
+        List<Genero> generos = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Genero genero = new Genero(
+                    obj.getInt("id"),
+                    obj.getString("genero")
+                );
+                generos.add(genero);
+            }
+        }
+        return generos;
+    }
+
+    public static void insertarGenero(Genero genero) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", genero.getId());
+                obj.put("genero", genero.getGenero());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir genero");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar genero: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class Puesto {
+    private int id;
+    private String tipo;
+
+    public Puesto(int id, String tipo) {
+        this.id = id;
+        this.tipo = tipo;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+}
+
+package crud;
+
+import models.Puesto;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PuestoCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/puestos.json";
+
+    public static List<Puesto> leerPuestos() {
+        List<Puesto> puestos = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Puesto puesto = new Puesto(
+                    obj.getInt("id"),
+                    obj.getString("tipo")
+                );
+                puestos.add(puesto);
+            }
+        }
+        return puestos;
+    }
+
+    public static void insertarPuesto(Puesto puesto) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", puesto.getId());
+                obj.put("tipo", puesto.getTipo());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir puesto");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar puesto: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class Material {
+    private int id;
+    private String nombre;
+    private String tipo;
+    private double precio;
+
+    public Material(int id, String nombre, String tipo, double precio) {
+        this.id = id;
+        this.nombre = nombre;
+        this.tipo = tipo;
+        this.precio = precio;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+    public double getPrecio() { return precio; }
+    public void setPrecio(double precio) { this.precio = precio; }
+}
+
+package crud;
+
+import models.Material;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MaterialCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/materiales.json";
+
+    public static List<Material> leerMateriales() {
+        List<Material> materiales = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Material material = new Material(
+                    obj.getInt("id"),
+                    obj.getString("nombre"),
+                    obj.getString("tipo"),
+                    obj.getDouble("precio")
+                );
+                materiales.add(material);
+            }
+        }
+        return materiales;
+    }
+
+    public static void insertarMaterial(Material material) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", material.getId());
+                obj.put("nombre", material.getNombre());
+                obj.put("tipo", material.getTipo());
+                obj.put("precio", material.getPrecio());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir material");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar material: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class HorarioDisponibilidad {
+    private int id;
+    private int sucursalId;
+    private String dia;
+    private String horaInicio;
+    private String horaFin;
+
+    public HorarioDisponibilidad(int id, int sucursalId, String dia, String horaInicio, String horaFin) {
+        this.id = id;
+        this.sucursalId = sucursalId;
+        this.dia = dia;
+        this.horaInicio = horaInicio;
+        this.horaFin = horaFin;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
+    public String getDia() { return dia; }
+    public void setDia(String dia) { this.dia = dia; }
+    public String getHoraInicio() { return horaInicio; }
+    public void setHoraInicio(String horaInicio) { this.horaInicio = horaInicio; }
+    public String getHoraFin() { return horaFin; }
+    public void setHoraFin(String horaFin) { this.horaFin = horaFin; }
+}
+
+package crud;
+
+import models.HorarioDisponibilidad;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class HorarioDisponibilidadCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/horarios_disponibilidad.json";
+
+    public static List<HorarioDisponibilidad> leerHorarios() {
+        List<HorarioDisponibilidad> horarios = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                HorarioDisponibilidad horario = new HorarioDisponibilidad(
+                    obj.getInt("id"),
+                    obj.getInt("sucursalId"),
+                    obj.getString("dia"),
+                    obj.getString("horaInicio"),
+                    obj.getString("horaFin")
+                );
+                horarios.add(horario);
+            }
+        }
+        return horarios;
+    }
+
+    public static void insertarHorario(HorarioDisponibilidad horario) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", horario.getId());
+                obj.put("sucursalId", horario.getSucursalId());
+                obj.put("dia", horario.getDia());
+                obj.put("horaInicio", horario.getHoraInicio());
+                obj.put("horaFin", horario.getHoraFin());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir horario");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar horario: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class Sucursal {
+    private int id;
+    private String nombre;
+    private String direccion;
+    private String horario;
+
+    public Sucursal(int id, String nombre, String direccion, String horario) {
+        this.id = id;
+        this.nombre = nombre;
+        this.direccion = direccion;
+        this.horario = horario;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public String getHorario() { return horario; }
+    public void setHorario(String horario) { this.horario = horario; }
+}
+
+package crud;
+
+import models.Sucursal;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class SucursalCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/sucursales.json";
+
+    public static List<Sucursal> leerSucursales() {
+        List<Sucursal> sucursales = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Sucursal sucursal = new Sucursal(
+                    obj.getInt("id"),
+                    obj.getString("nombre"),
+                    obj.getString("direccion"),
+                    obj.getString("horario")
+                );
+                sucursales.add(sucursal);
+            }
+        }
+        return sucursales;
+    }
+
+    public static void insertarSucursal(Sucursal sucursal) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", sucursal.getId());
+                obj.put("nombre", sucursal.getNombre());
+                obj.put("direccion", sucursal.getDireccion());
+                obj.put("horario", sucursal.getHorario());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir sucursal");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar sucursal: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class Pago {
+    private int id;
+    private double montoTotal;
+    private String fecha;
+    private int clienteId;
+    private int metodoPagoId;
+
+    public Pago(int id, double montoTotal, String fecha, int clienteId, int metodoPagoId) {
+        this.id = id;
+        this.montoTotal = montoTotal;
+        this.fecha = fecha;
+        this.clienteId = clienteId;
+        this.metodoPagoId = metodoPagoId;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public double getMontoTotal() { return montoTotal; }
+    public void setMontoTotal(double montoTotal) { this.montoTotal = montoTotal; }
+    public String getFecha() { return fecha; }
+    public void setFecha(String fecha) { this.fecha = fecha; }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
+    public int getMetodoPagoId() { return metodoPagoId; }
+    public void setMetodoPagoId(int metodoPagoId) { this.metodoPagoId = metodoPagoId; }
+}
+
+package crud;
+
+import models.Pago;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PagoCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/pagos.json";
+
+    public static List<Pago> leerPagos() {
+        List<Pago> pagos = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Pago pago = new Pago(
+                    obj.getInt("id"),
+                    obj.getDouble("montoTotal"),
+                    obj.getString("fecha"),
+                    obj.getInt("clienteId"),
+                    obj.getInt("metodoPagoId")
+                );
+                pagos.add(pago);
+            }
+        }
+        return pagos;
+    }
+
+    public static void insertarPago(Pago pago) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", pago.getId());
+                obj.put("montoTotal", pago.getMontoTotal());
+                obj.put("fecha", pago.getFecha());
+                obj.put("clienteId", pago.getClienteId());
+                obj.put("metodoPagoId", pago.getMetodoPagoId());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir pago");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar pago: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class CuponDescuento {
+    private int id;
+    private int clienteId;
+    private String codigo;
+    private String fechaVencimiento;
+
+    public CuponDescuento(int id, int clienteId, String codigo, String fechaVencimiento) {
+        this.id = id;
+        this.clienteId = clienteId;
+        this.codigo = codigo;
+        this.fechaVencimiento = fechaVencimiento;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
+    public String getCodigo() { return codigo; }
+    public void setCodigo(String codigo) { this.codigo = codigo; }
+    public String getFechaVencimiento() { return fechaVencimiento; }
+    public void setFechaVencimiento(String fechaVencimiento) { this.fechaVencimiento = fechaVencimiento; }
+}
+
+package crud;
+
+import models.CuponDescuento;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class CuponDescuentoCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/cupones_descuento.json";
+
+    public static List<CuponDescuento> leerCupones() {
+        List<CuponDescuento> cupones = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                CuponDescuento cupon = new CuponDescuento(
+                    obj.getInt("id"),
+                    obj.getInt("clienteId"),
+                    obj.getString("codigo"),
+                    obj.getString("fechaVencimiento")
+                );
+                cupones.add(cupon);
+            }
+        }
+        return cupones;
+    }
+
+    public static void insertarCupon(CuponDescuento cupon) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", cupon.getId());
+                obj.put("clienteId", cupon.getClienteId());
+                obj.put("codigo", cupon.getCodigo());
+                obj.put("fechaVencimiento", cupon.getFechaVencimiento());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir cupón de descuento");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar cupón: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class EncuestaSatisfaccion {
+    private int id;
+    private int clienteId;
+    private int servicioId;
+    private int puntuacion;
+    private String comentario;
+
+    public EncuestaSatisfaccion(int id, int clienteId, int servicioId, int puntuacion, String comentario) {
+        this.id = id;
+        this.clienteId = clienteId;
+        this.servicioId = servicioId;
+        this.puntuacion = puntuacion;
+        this.comentario = comentario;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
+    public int getServicioId() { return servicioId; }
+    public void setServicioId(int servicioId) { this.servicioId = servicioId; }
+    public int getPuntuacion() { return puntuacion; }
+    public void setPuntuacion(int puntuacion) { this.puntuacion = puntuacion; }
+    public String getComentario() { return comentario; }
+    public void setComentario(String comentario) { this.comentario = comentario; }
+}
+
+package crud;
+
+import models.EncuestaSatisfaccion;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EncuestaSatisfaccionCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/encuestas_satisfaccion.json";
+
+    public static List<EncuestaSatisfaccion> leerEncuestas() {
+        List<EncuestaSatisfaccion> encuestas = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                EncuestaSatisfaccion encuesta = new EncuestaSatisfaccion(
+                    obj.getInt("id"),
+                    obj.getInt("clienteId"),
+                    obj.getInt("servicioId"),
+                    obj.getInt("puntuacion"),
+                    obj.getString("comentario")
+                );
+                encuestas.add(encuesta);
+            }
+        }
+        return encuestas;
+    }
+
+    public static void insertarEncuesta(EncuestaSatisfaccion encuesta) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", encuesta.getId());
+                obj.put("clienteId", encuesta.getClienteId());
+                obj.put("servicioId", encuesta.getServicioId());
+                obj.put("puntuacion", encuesta.getPuntuacion());
+                obj.put("comentario", encuesta.getComentario());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir encuesta");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar encuesta: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class TipoMembresia {
+    private int id;
+    private String nombreTipo;
+    private String descripcion;
+
+    public TipoMembresia(int id, String nombreTipo, String descripcion) {
+        this.id = id;
+        this.nombreTipo = nombreTipo;
+        this.descripcion = descripcion;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombreTipo() { return nombreTipo; }
+    public void setNombreTipo(String nombreTipo) { this.nombreTipo = nombreTipo; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+}
+
+package models;
+
+public class TipoMembresia {
+    private int id;
+    private String nombreTipo;
+    private String descripcion;
+
+    public TipoMembresia(int id, String nombreTipo, String descripcion) {
+        this.id = id;
+        this.nombreTipo = nombreTipo;
+        this.descripcion = descripcion;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombreTipo() { return nombreTipo; }
+    public void setNombreTipo(String nombreTipo) { this.nombreTipo = nombreTipo; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+}
+
+package models;
+
+public class TipoMembresia {
+    private int id;
+    private String nombreTipo;
+    private String descripcion;
+
+    public TipoMembresia(int id, String nombreTipo, String descripcion) {
+        this.id = id;
+        this.nombreTipo = nombreTipo;
+        this.descripcion = descripcion;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNombreTipo() { return nombreTipo; }
+    public void setNombreTipo(String nombreTipo) { this.nombreTipo = nombreTipo; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+}
+
+package crud;
+
+import models.Proveedor;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProveedorCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/proveedores.json";
+
+    public static List<Proveedor> leerProveedores() {
+        List<Proveedor> proveedores = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Proveedor proveedor = new Proveedor(
+                    obj.getInt("id"),
+                    obj.getString("nombre"),
+                    obj.getString("telefono"),
+                    obj.getString("correo")
+                );
+                proveedores.add(proveedor);
+            }
+        }
+        return proveedores;
+    }
+
+    public static void insertarProveedor(Proveedor proveedor) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", proveedor.getId());
+                obj.put("nombre", proveedor.getNombre());
+                obj.put("telefono", proveedor.getTelefono());
+                obj.put("correo", proveedor.getCorreo());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir proveedor");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar proveedor: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class GastoOperativo {
+    private int id;
+    private int sucursalId;
+    private String descripcion;
+    private double monto;
+    private String fecha;
+
+    public GastoOperativo(int id, int sucursalId, String descripcion, double monto, String fecha) {
+        this.id = id;
+        this.sucursalId = sucursalId;
+        this.descripcion = descripcion;
+        this.monto = monto;
+        this.fecha = fecha;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public double getMonto() { return monto; }
+    public void setMonto(double monto) { this.monto = monto; }
+    public String getFecha() { return fecha; }
+    public void setFecha(String fecha) { this.fecha = fecha; }
+}
+
+package crud;
+
+import models.GastoOperativo;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class GastoOperativoCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/gastos_operativos.json";
+
+    public static List<GastoOperativo> leerGastos() {
+        List<GastoOperativo> gastos = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                GastoOperativo gasto = new GastoOperativo(
+                    obj.getInt("id"),
+                    obj.getInt("sucursalId"),
+                    obj.getString("descripcion"),
+                    obj.getDouble("monto"),
+                    obj.getString("fecha")
+                );
+                gastos.add(gasto);
+            }
+        }
+        return gastos;
+    }
+
+    public static void insertarGasto(GastoOperativo gasto) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", gasto.getId());
+                obj.put("sucursalId", gasto.getSucursalId());
+                obj.put("descripcion", gasto.getDescripcion());
+                obj.put("monto", gasto.getMonto());
+                obj.put("fecha", gasto.getFecha());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir gasto operativo");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar gasto: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class DetalleServicioMaterial {
+    private int id;
+    private int materialId;
+    private int servicioId;
+
+    public DetalleServicioMaterial(int id, int materialId, int servicioId) {
+        this.id = id;
+        this.materialId = materialId;
+        this.servicioId = servicioId;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getMaterialId() { return materialId; }
+    public void setMaterialId(int materialId) { this.materialId = materialId; }
+    public int getServicioId() { return servicioId; }
+    public void setServicioId(int servicioId) { this.servicioId = servicioId; }
+}
+
+package crud;
+
+import models.DetalleServicioMaterial;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DetalleServicioMaterialCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/detalle_servicio_material.json";
+
+    public static List<DetalleServicioMaterial> leerDetalles() {
+        List<DetalleServicioMaterial> detalles = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                DetalleServicioMaterial detalle = new DetalleServicioMaterial(
+                    obj.getInt("id"),
+                    obj.getInt("materialId"),
+                    obj.getInt("servicioId")
+                );
+                detalles.add(detalle);
+            }
+        }
+        return detalles;
+    }
+
+    public static void insertarDetalle(DetalleServicioMaterial detalle) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", detalle.getId());
+                obj.put("materialId", detalle.getMaterialId());
+                obj.put("servicioId", detalle.getServicioId());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir detalle de servicio y material");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar detalle: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class ClienteMembresia {
+    private int id;
+    private int clienteId;
+    private int membresiaId;
+    private String fechaInicio;
+    private String fechaFin;
+
+    public ClienteMembresia(int id, int clienteId, int membresiaId, String fechaInicio, String fechaFin) {
+        this.id = id;
+        this.clienteId = clienteId;
+        this.membresiaId = membresiaId;
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
+    public int getMembresiaId() { return membresiaId; }
+    public void setMembresiaId(int membresiaId) { this.membresiaId = membresiaId; }
+    public String getFechaInicio() { return fechaInicio; }
+    public void setFechaInicio(String fechaInicio) { this.fechaInicio = fechaInicio; }
+    public String getFechaFin() { return fechaFin; }
+    public void setFechaFin(String fechaFin) { this.fechaFin = fechaFin; }
+}
+
+package crud;
+
+import models.ClienteMembresia;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ClienteMembresiaCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/clientes_membresias.json";
+
+    public static List<ClienteMembresia> leerMembresiasCliente() {
+        List<ClienteMembresia> clientesMembresias = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                ClienteMembresia clienteMembresia = new ClienteMembresia(
+                    obj.getInt("id"),
+                    obj.getInt("clienteId"),
+                    obj.getInt("membresiaId"),
+                    obj.getString("fechaInicio"),
+                    obj.getString("fechaFin")
+                );
+                clientesMembresias.add(clienteMembresia);
+            }
+        }
+        return clientesMembresias;
+    }
+
+    public static void insertarMembresiaCliente(ClienteMembresia clienteMembresia) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", clienteMembresia.getId());
+                obj.put("clienteId", clienteMembresia.getClienteId());
+                obj.put("membresiaId", clienteMembresia.getMembresiaId());
+                obj.put("fechaInicio", clienteMembresia.getFechaInicio());
+                obj.put("fechaFin", clienteMembresia.getFechaFin());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir membresía al cliente");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar membresía del cliente: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class ServicioPromocion {
+    private int id;
+    private int servicioId;
+    private int promocionId;
+
+    public ServicioPromocion(int id, int servicioId, int promocionId) {
+        this.id = id;
+        this.servicioId = servicioId;
+        this.promocionId = promocionId;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getServicioId() { return servicioId; }
+    public void setServicioId(int servicioId) { this.servicioId = servicioId; }
+    public int getPromocionId() { return promocionId; }
+    public void setPromocionId(int promocionId) { this.promocionId = promocionId; }
+}
+
+package crud;
+
+import models.ServicioPromocion;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ServicioPromocionCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/servicios_promociones.json";
+
+    public static List<ServicioPromocion> leerPromocionesServicio() {
+        List<ServicioPromocion> serviciosPromociones = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                ServicioPromocion servicioPromocion = new ServicioPromocion(
+                    obj.getInt("id"),
+                    obj.getInt("servicioId"),
+                    obj.getInt("promocionId")
+                );
+                serviciosPromociones.add(servicioPromocion);
+            }
+        }
+        return serviciosPromociones;
+    }
+
+    public static void insertarPromocionServicio(ServicioPromocion servicioPromocion) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", servicioPromocion.getId());
+                obj.put("servicioId", servicioPromocion.getServicioId());
+                obj.put("promocionId", servicioPromocion.getPromocionId());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir promoción al servicio");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar promoción del servicio: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class ProveedorMaterial {
+    private int id;
+    private int materialId;
+    private int proveedorId;
+    private double precio;
+
+    public ProveedorMaterial(int id, int materialId, int proveedorId, double precio) {
+        this.id = id;
+        this.materialId = materialId;
+        this.proveedorId = proveedorId;
+        this.precio = precio;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getMaterialId() { return materialId; }
+    public void setMaterialId(int materialId) { this.materialId = materialId; }
+    public int getProveedorId() { return proveedorId; }
+    public void setProveedorId(int proveedorId) { this.proveedorId = proveedorId; }
+    public double getPrecio() { return precio; }
+    public void setPrecio(double precio) { this.precio = precio; }
+}
+
+package crud;
+
+import models.ProveedorMaterial;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ProveedorMaterialCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/proveedores_materiales.json";
+
+    public static List<ProveedorMaterial> leerProveedorMaterial() {
+        List<ProveedorMaterial> proveedoresMateriales = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                ProveedorMaterial proveedorMaterial = new ProveedorMaterial(
+                    obj.getInt("id"),
+                    obj.getInt("materialId"),
+                    obj.getInt("proveedorId"),
+                    obj.getDouble("precio")
+                );
+                proveedoresMateriales.add(proveedorMaterial);
+            }
+        }
+        return proveedoresMateriales;
+    }
+
+    public static void insertarProveedorMaterial(ProveedorMaterial proveedorMaterial) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", proveedorMaterial.getId());
+                obj.put("materialId", proveedorMaterial.getMaterialId());
+                obj.put("proveedorId", proveedorMaterial.getProveedorId());
+                obj.put("precio", proveedorMaterial.getPrecio());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir material a proveedor");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar proveedor de material: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class AgendaServicio {
+    private int id;
+    private String hora;
+    private String fecha;
+    private int servicioId;
+
+    public AgendaServicio(int id, String hora, String fecha, int servicioId) {
+        this.id = id;
+        this.hora = hora;
+        this.fecha = fecha;
+        this.servicioId = servicioId;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getHora() { return hora; }
+    public void setHora(String hora) { this.hora = hora; }
+    public String getFecha() { return fecha; }
+    public void setFecha(String fecha) { this.fecha = fecha; }
+    public int getServicioId() { return servicioId; }
+    public void setServicioId(int servicioId) { this.servicioId = servicioId; }
+}
+
+package crud;
+
+import models.AgendaServicio;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class AgendaServicioCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/agenda_servicios.json";
+
+    public static List<AgendaServicio> leerAgenda() {
+        List<AgendaServicio> agendas = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                AgendaServicio agenda = new AgendaServicio(
+                    obj.getInt("id"),
+                    obj.getString("hora"),
+                    obj.getString("fecha"),
+                    obj.getInt("servicioId")
+                );
+                agendas.add(agenda);
+            }
+        }
+        return agendas;
+    }
+
+    public static void insertarAgenda(AgendaServicio agenda) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", agenda.getId());
+                obj.put("hora", agenda.getHora());
+                obj.put("fecha", agenda.getFecha());
+                obj.put("servicioId", agenda.getServicioId());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir horario a la agenda");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar agenda: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class Reporte {
+    private int id;
+    private int sucursalId;
+    private String descripcion;
+    private String fecha;
+    private double total;
+
+    public Reporte(int id, int sucursalId, String descripcion, String fecha, double total) {
+        this.id = id;
+        this.sucursalId = sucursalId;
+        this.descripcion = descripcion;
+        this.fecha = fecha;
+        this.total = total;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getSucursalId() { return sucursalId; }
+    public void setSucursalId(int sucursalId) { this.sucursalId = sucursalId; }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public String getFecha() { return fecha; }
+    public void setFecha(String fecha) { this.fecha = fecha; }
+    public double getTotal() { return total; }
+    public void setTotal(double total) { this.total = total; }
+}
+
+package crud;
+
+import models.Reporte;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReporteCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/reportes.json";
+
+    public static List<Reporte> leerReportes() {
+        List<Reporte> reportes = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                Reporte reporte = new Reporte(
+                    obj.getInt("id"),
+                    obj.getInt("sucursalId"),
+                    obj.getString("descripcion"),
+                    obj.getString("fecha"),
+                    obj.getDouble("total")
+                );
+                reportes.add(reporte);
+            }
+        }
+        return reportes;
+    }
+
+    public static void insertarReporte(Reporte reporte) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", reporte.getId());
+                obj.put("sucursalId", reporte.getSucursalId());
+                obj.put("descripcion", reporte.getDescripcion());
+                obj.put("fecha", reporte.getFecha());
+                obj.put("total", reporte.getTotal());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir reporte");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar reporte: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class EspecialistaDisponibilidad {
+    private int id;
+    private int empleadoId;
+    private String dia;
+    private String horaInicio;
+    private String horaFin;
+
+    public EspecialistaDisponibilidad(int id, int empleadoId, String dia, String horaInicio, String horaFin) {
+        this.id = id;
+        this.empleadoId = empleadoId;
+        this.dia = dia;
+        this.horaInicio = horaInicio;
+        this.horaFin = horaFin;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getEmpleadoId() { return empleadoId; }
+    public void setEmpleadoId(int empleadoId) { this.empleadoId = empleadoId; }
+    public String getDia() { return dia; }
+    public void setDia(String dia) { this.dia = dia; }
+    public String getHoraInicio() { return horaInicio; }
+    public void setHoraInicio(String horaInicio) { this.horaInicio = horaInicio; }
+    public String getHoraFin() { return horaFin; }
+    public void setHoraFin(String horaFin) { this.horaFin = horaFin; }
+}
+
+package crud;
+
+import models.EspecialistaDisponibilidad;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class EspecialistaDisponibilidadCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/especialistas_disponibilidad.json";
+
+    public static List<EspecialistaDisponibilidad> leerDisponibilidades() {
+        List<EspecialistaDisponibilidad> disponibilidades = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                EspecialistaDisponibilidad disponibilidad = new EspecialistaDisponibilidad(
+                    obj.getInt("id"),
+                    obj.getInt("empleadoId"),
+                    obj.getString("dia"),
+                    obj.getString("horaInicio"),
+                    obj.getString("horaFin")
+                );
+                disponibilidades.add(disponibilidad);
+            }
+        }
+        return disponibilidades;
+    }
+
+    public static void insertarDisponibilidad(EspecialistaDisponibilidad disponibilidad) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", disponibilidad.getId());
+                obj.put("empleadoId", disponibilidad.getEmpleadoId());
+                obj.put("dia", disponibilidad.getDia());
+                obj.put("horaInicio", disponibilidad.getHoraInicio());
+                obj.put("horaFin", disponibilidad.getHoraFin());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir disponibilidad de especialista");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar disponibilidad: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class ContactoProveedor {
+    private int id;
+    private int proveedorId;
+    private String nombreContacto;
+    private String telefonoContacto;
+
+    public ContactoProveedor(int id, int proveedorId, String nombreContacto, String telefonoContacto) {
+        this.id = id;
+        this.proveedorId = proveedorId;
+        this.nombreContacto = nombreContacto;
+        this.telefonoContacto = telefonoContacto;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getProveedorId() { return proveedorId; }
+    public void setProveedorId(int proveedorId) { this.proveedorId = proveedorId; }
+    public String getNombreContacto() { return nombreContacto; }
+    public void setNombreContacto(String nombreContacto) { this.nombreContacto = nombreContacto; }
+    public String getTelefonoContacto() { return telefonoContacto; }
+    public void setTelefonoContacto(String telefonoContacto) { this.telefonoContacto = telefonoContacto; }
+}
+
+package crud;
+
+import models.ContactoProveedor;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ContactoProveedorCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/contactos_proveedores.json";
+
+    public static List<ContactoProveedor> leerContactosProveedores() {
+        List<ContactoProveedor> contactos = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                ContactoProveedor contacto = new ContactoProveedor(
+                    obj.getInt("id"),
+                    obj.getInt("proveedorId"),
+                    obj.getString("nombreContacto"),
+                    obj.getString("telefonoContacto")
+                );
+                contactos.add(contacto);
+            }
+        }
+        return contactos;
+    }
+
+    public static void insertarContacto(ContactoProveedor contacto) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", contacto.getId());
+                obj.put("proveedorId", contacto.getProveedorId());
+                obj.put("nombreContacto", contacto.getNombreContacto());
+                obj.put("telefonoContacto", contacto.getTelefonoContacto());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir contacto de proveedor");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar contacto de proveedor: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class ContactoEmergencia {
+    private int id;
+    private int empleadoId;
+    private String nombre;
+    private String telefono;
+
+    public ContactoEmergencia(int id, int empleadoId, String nombre, String telefono) {
+        this.id = id;
+        this.empleadoId = empleadoId;
+        this.nombre = nombre;
+        this.telefono = telefono;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getEmpleadoId() { return empleadoId; }
+    public void setEmpleadoId(int empleadoId) { this.empleadoId = empleadoId; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+}
+
+package crud;
+
+import models.ContactoEmergencia;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ContactoEmergenciaCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/contactos_emergencia.json";
+
+    public static List<ContactoEmergencia> leerContactosEmergencia() {
+        List<ContactoEmergencia> contactos = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                ContactoEmergencia contacto = new ContactoEmergencia(
+                    obj.getInt("id"),
+                    obj.getInt("empleadoId"),
+                    obj.getString("nombre"),
+                    obj.getString("telefono")
+                );
+                contactos.add(contacto);
+            }
+        }
+        return contactos;
+    }
+
+    public static void insertarContactoEmergencia(ContactoEmergencia contacto) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", contacto.getId());
+                obj.put("empleadoId", contacto.getEmpleadoId());
+                obj.put("nombre", contacto.getNombre());
+                obj.put("telefono", contacto.getTelefono());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir contacto de emergencia");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar contacto de emergencia: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class PedidoProveedor {
+    private int id;
+    private int proveedorId;
+    private String fechaPedido;
+    private String estado;
+
+    public PedidoProveedor(int id, int proveedorId, String fechaPedido, String estado) {
+        this.id = id;
+        this.proveedorId = proveedorId;
+        this.fechaPedido = fechaPedido;
+        this.estado = estado;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getProveedorId() { return proveedorId; }
+    public void setProveedorId(int proveedorId) { this.proveedorId = proveedorId; }
+    public String getFechaPedido() { return fechaPedido; }
+    public void setFechaPedido(String fechaPedido) { this.fechaPedido = fechaPedido; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+}
+
+package models;
+
+public class PedidoProveedor {
+    private int id;
+    private int proveedorId;
+    private String fechaPedido;
+    private String estado;
+
+    public PedidoProveedor(int id, int proveedorId, String fechaPedido, String estado) {
+        this.id = id;
+        this.proveedorId = proveedorId;
+        this.fechaPedido = fechaPedido;
+        this.estado = estado;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getProveedorId() { return proveedorId; }
+    public void setProveedorId(int proveedorId) { this.proveedorId = proveedorId; }
+    public String getFechaPedido() { return fechaPedido; }
+    public void setFechaPedido(String fechaPedido) { this.fechaPedido = fechaPedido; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+}
+
+package models;
+
+public class ClienteHistorial {
+    private int id;
+    private int clienteId;
+    private int servicioId;
+    private String fecha;
+
+    public ClienteHistorial(int id, int clienteId, int servicioId, String fecha) {
+        this.id = id;
+        this.clienteId = clienteId;
+        this.servicioId = servicioId;
+        this.fecha = fecha;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
+    public int getServicioId() { return servicioId; }
+    public void setServicioId(int servicioId) { this.servicioId = servicioId; }
+    public String getFecha() { return fecha; }
+    public void setFecha(String fecha) { this.fecha = fecha; }
+}
+
+package crud;
+
+import models.ClienteHistorial;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ClienteHistorialCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/clientes_historial.json";
+
+    public static List<ClienteHistorial> leerHistorialClientes() {
+        List<ClienteHistorial> historial = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                ClienteHistorial clienteHistorial = new ClienteHistorial(
+                    obj.getInt("id"),
+                    obj.getInt("clienteId"),
+                    obj.getInt("servicioId"),
+                    obj.getString("fecha")
+                );
+                historial.add(clienteHistorial);
+            }
+        }
+        return historial;
+    }
+
+    public static void insertarHistorialCliente(ClienteHistorial clienteHistorial) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", clienteHistorial.getId());
+                obj.put("clienteId", clienteHistorial.getClienteId());
+                obj.put("servicioId", clienteHistorial.getServicioId());
+                obj.put("fecha", clienteHistorial.getFecha());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir historial del cliente");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar historial del cliente: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class ServicioAdicional {
+    private int id;
+    private int servicioId;
+    private String nombreAdicional;
+    private double precioAdicional;
+
+    public ServicioAdicional(int id, int servicioId, String nombreAdicional, double precioAdicional) {
+        this.id = id;
+        this.servicioId = servicioId;
+        this.nombreAdicional = nombreAdicional;
+        this.precioAdicional = precioAdicional;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getServicioId() { return servicioId; }
+    public void setServicioId(int servicioId) { this.servicioId = servicioId; }
+    public String getNombreAdicional() { return nombreAdicional; }
+    public void setNombreAdicional(String nombreAdicional) { this.nombreAdicional = nombreAdicional; }
+    public double getPrecioAdicional() { return precioAdicional; }
+    public void setPrecioAdicional(double precioAdicional) { this.precioAdicional = precioAdicional; }
+}
+
+package crud;
+
+import models.ServicioAdicional;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ServicioAdicionalCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/servicios_adicionales.json";
+
+    public static List<ServicioAdicional> leerServiciosAdicionales() {
+        List<ServicioAdicional> adicionales = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                ServicioAdicional adicional = new ServicioAdicional(
+                    obj.getInt("id"),
+                    obj.getInt("servicioId"),
+                    obj.getString("nombreAdicional"),
+                    obj.getDouble("precioAdicional")
+                );
+                adicionales.add(adicional);
+            }
+        }
+        return adicionales;
+    }
+
+    public static void insertarServicioAdicional(ServicioAdicional adicional) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", adicional.getId());
+                obj.put("servicioId", adicional.getServicioId());
+                obj.put("nombreAdicional", adicional.getNombreAdicional());
+                obj.put("precioAdicional", adicional.getPrecioAdicional());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir servicio adicional");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar servicio adicional: " + e.getMessage());
+        }
+    }
+}
+
+package models;
+
+public class PromocionCliente {
+    private int id;
+    private int clienteId;
+    private int promocionId;
+
+    public PromocionCliente(int id, int clienteId, int promocionId) {
+        this.id = id;
+        this.clienteId = clienteId;
+        this.promocionId = promocionId;
+    }
+
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public int getClienteId() { return clienteId; }
+    public void setClienteId(int clienteId) { this.clienteId = clienteId; }
+    public int getPromocionId() { return promocionId; }
+    public void setPromocionId(int promocionId) { this.promocionId = promocionId; }
+}
+
+package crud;
+
+import models.PromocionCliente;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PromocionClienteCRUD {
+    private static final String GITHUB_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/promociones_clientes.json";
+
+    public static List<PromocionCliente> leerPromocionesClientes() {
+        List<PromocionCliente> promocionesClientes = new ArrayList<>();
+        JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject obj = data.getJSONObject(i);
+                PromocionCliente promocionCliente = new PromocionCliente(
+                    obj.getInt("id"),
+                    obj.getInt("clienteId"),
+                    obj.getInt("promocionId")
+                );
+                promocionesClientes.add(promocionCliente);
+            }
+        }
+        return promocionesClientes;
+    }
+
+    public static void insertarPromocionCliente(PromocionCliente promocionCliente) {
+        try {
+            JSONArray data = GitHubConnection.leerArchivoGitHub(GITHUB_URL);
+            if (data != null) {
+                JSONObject obj = new JSONObject();
+                obj.put("id", promocionCliente.getId());
+                obj.put("clienteId", promocionCliente.getClienteId());
+                obj.put("promocionId", promocionCliente.getPromocionId());
+                data.put(obj);
+
+                GitHubConnection.escribirArchivoGitHub(GITHUB_URL, data.toString(), "Añadir promoción a cliente");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al agregar promoción para cliente: " + e.getMessage());
+        }
+    }
+}
